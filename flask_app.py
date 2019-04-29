@@ -258,6 +258,20 @@ def game_translation(res, req):
             sessionStorage[user_id]['game_started'] = False
         else:
             res['response']['text'] = 'Хм, какая - то незнакомая комманда, повтори ещё раз!'
+            res['response']['buttons'] += [
+                {
+                    'title': 'Язык1',
+                    'hide': 'True'
+                },
+                {
+                    'title': 'Язык2',
+                    'hide': 'True'
+                },
+                {
+                    'title': 'Перевод',
+                    'hide': 'True'
+                }
+            ]
 
 
 def translator(res, req):
@@ -461,6 +475,20 @@ def translator(res, req):
         ]
     else:
         res['response']['text'] = 'Хм, какая - то незнакомая комманда, повтори ещё раз!'
+        res['response']['buttons'] += [
+            {
+                'title': 'Язык1',
+                'hide': 'True'
+            },
+            {
+                'title': 'Язык2',
+                'hide': 'True'
+            },
+            {
+                'title': 'Перевод',
+                'hide': 'True'
+            }
+        ]
 
 
 def get_first_name(req):
