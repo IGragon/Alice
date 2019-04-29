@@ -75,10 +75,6 @@ def handle_dialog(res, req):
                     'hide': True
                 },
                 {
-                    'title': 'Расчет расстояния',
-                    'hide': True
-                },
-                {
                     'title': 'Хочу выйти!',
                     'hide': True
                 },
@@ -103,7 +99,6 @@ def handle_dialog(res, req):
                 res['response']['text'] = ''' Игра "Угадай перевод" - вам даётся слово на случайном языке
                  и варианты перевода\n\n
                  Переводчик - перевод фраз и слов\n\n
-                 Расчёт расстояния - расчёт расстояния от адреса до адреса\n\n
                  Хочу выйти - завершение диалога.'''
                 res['response']['buttons'] = [
                     {
@@ -112,10 +107,6 @@ def handle_dialog(res, req):
                     },
                     {
                         'title': 'Переводчик',
-                        'hide': True
-                    },
-                    {
-                        'title': 'Расчет расстояния',
                         'hide': True
                     },
                     {
@@ -136,10 +127,6 @@ def handle_dialog(res, req):
                     },
                     {
                         'title': 'Переводчик',
-                        'hide': True
-                    },
-                    {
-                        'title': 'Расчет расстояния',
                         'hide': True
                     },
                     {
