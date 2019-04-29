@@ -192,10 +192,6 @@ def game_translation(res, req):
                 'hide': True
             },
             {
-                'title': 'Расчет расстояния',
-                'hide': True
-            },
-            {
                 'title': 'Хочу выйти!',
                 'hide': True
             },
