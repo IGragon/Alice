@@ -16,7 +16,7 @@ languages = {
     'немецкий': 'de', 'норвежский': 'no', 'персидский': 'fa', 'польский': 'pl', 'португальский': 'pt',
     'румынский': 'ro', 'сербский': 'sr', 'словацкий': 'sk', 'словенский': 'sl', 'тайский': 'th', 'турецкий': 'tr',
     'украинский': 'uk', 'финский': 'fi', 'французский': 'fr', 'хинди': 'hi', 'хорватский': 'hr', 'чешский': 'cs',
-    'шведский': 'sv', 'шотландский': 'gd', 'эстонский': 'et', 'эсперанто': 'eo', 'японский': 'ja'
+    'шведский': 'sv', 'шотландский': 'gd', 'эстонский': 'et', 'эсперанто': 'eo', 'японский': 'ja', 'русский': 'ru'
 }
 
 sessionStorage = {}
@@ -96,10 +96,6 @@ def handle_dialog(res, req):
             elif 'Переводчик' in req['request']['original_utterance']:
                 sessionStorage[user_id]['option'] = 'translate'
                 translator(res, req)
-            elif 'Расчет расстояния' in req['request']['original_utterance']:
-                sessionStorage[user_id]['option'] = 'distance'
-                res['response']['text'] = ' Нажми "Помощь" чтобы узнать как работает "Расчёт расстояния" '
-                distance(res, req)
             elif 'Хочу выйти!' in req['request']['original_utterance']:
                 res['response']['text'] = 'Пока, {}!'.format(sessionStorage[user_id]['first_name'])
                 res['end_session'] = True
@@ -160,8 +156,6 @@ def handle_dialog(res, req):
                 game_translation(res, req)
             elif sessionStorage[user_id]['option'] == 'translate':
                 translator(res, req)
-            elif sessionStorage[user_id]['option'] == 'distance':
-                distance(res, req)
 
 
 def game_translation(res, req):
@@ -330,10 +324,6 @@ def translator(res, req):
                 'hide': True
             },
             {
-                'title': 'Расчет расстояния',
-                'hide': True
-            },
-            {
                 'title': 'Хочу выйти!',
                 'hide': True
             },
@@ -376,7 +366,7 @@ def translator(res, req):
             )
     elif (not sessionStorage[user_id]['choose_language_1'] and not sessionStorage[user_id]['choose_language_2'] and
           not sessionStorage[user_id]['translate'] and req['request']['original_utterance'] == 'Язык2'):
-        sessionStorage[user_id]['choose_language_1'] = True
+        sessionStorage[user_id]['choose_language_2'] = True
         res['response']['text'] = 'Выберите из предложенных вариантов!'
         res['response']['buttons'].clear()
         for lang in list(languages):
@@ -417,7 +407,7 @@ def translator(res, req):
                 )
     elif sessionStorage[user_id]['choose_language_2']:
         if req['request']['original_utterance'] in list(languages):
-            sessionStorage[user_id]['lang1'] = languages[req['request']['original_utterance']]
+            sessionStorage[user_id]['lang2'] = languages[req['request']['original_utterance']]
             sessionStorage[user_id]['choose_language_2'] = False
             res['response']['text'] = 'Язык2 успешно выбран'
             res['response']['buttons'] += [
@@ -446,7 +436,7 @@ def translator(res, req):
                 )
     elif (not sessionStorage[user_id]['choose_language_1'] and not sessionStorage[user_id]['choose_language_2'] and
           not sessionStorage[user_id]['translate'] and req['request']['original_utterance'] == 'Перевод'):
-        if not sessionStorage[user_id]['lang1'] or not sessionStorage[user_id]['lang1']:
+        if not sessionStorage[user_id]['lang1'] or not sessionStorage[user_id]['lang2']:
             res['response']['text'] = 'Убедись, что языки выбраны!'
             res['response']['buttons'] += [
                 {
@@ -472,28 +462,22 @@ def translator(res, req):
                                             sessionStorage[user_id]['lang1'],
                                             sessionStorage[user_id]['lang2'])
         sessionStorage[user_id]['translate'] = False
+        res['response']['buttons'] += [
+            {
+                'title': 'Язык1',
+                'hide': 'True'
+            },
+            {
+                'title': 'Язык2',
+                'hide': 'True'
+            },
+            {
+                'title': 'Перевод',
+                'hide': 'True'
+            }
+        ]
     else:
         res['response']['text'] = 'Хм, какая - то незнакомая комманда, повтори ещё раз!'
-
-
-def distance(res, req):
-    user_id = req['session']['user_id']
-    res['response']['buttons'] = [
-        {
-            'title': 'Помощь',
-            'hide': True
-        }
-    ]
-    pass
-
-
-def get_city(req):
-    # перебираем именованные сущности
-    for entity in req['request']['nlu']['entities']:
-        # если тип YANDEX.GEO, то пытаемся получить город(city), если нет, то возвращаем None
-        if entity['type'] == 'YANDEX.GEO':
-            # возвращаем None, если не нашли сущности с типом YANDEX.GEO
-            return entity['value'].get('city', None)
 
 
 def get_first_name(req):
@@ -513,7 +497,7 @@ def get_word():
     while trans_word == word:
         word = random.choice(words)
         url = 'https://translate.yandex.net/api/v1.5/tr.json/translate'
-        lang = random.choice(list(languages))
+        lang = random.choice(sorted(list(languages)[:-1]))
         params = {
             'key': 'trnsl.1.1.20190413T111416Z.1abf50c982ce4f9e.2b978b4abcdb550558af2b2b9fdb162f36ff06fd',
             'text': word,
