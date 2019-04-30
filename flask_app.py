@@ -274,8 +274,8 @@ def game_translation(res, req):  # игра "Угадай перевод"
                                       'Как думаете, какой' \
                                       ' перевод?'.format(
                 info[1], info[2])
-            sessionStorage[user_id]['buttons'] = res['response']
-            ['buttons'].copy()
+            sessionStorage[user_id]['buttons'] = res['response']['buttons'].\
+                copy()
         elif req['request']['original_utterance'] == 'Алиса,' \
                                                      ' помощь':
             res['response']['text'] = '{}, выбери перевод' \
@@ -293,16 +293,15 @@ def game_translation(res, req):  # игра "Угадай перевод"
                 'title': req['request']['original_utterance'],
                 'hide': True
             })
-            res['response']['buttons'] = sessionStorage[user_id]
-            ['buttons'].copy()
+            res['response']['buttons'] = sessionStorage[user_id]['buttons'].\
+                copy()
             if len(res['response']['buttons']) - 1 < 4:
                 res['response']['text'] = f'Эх, не удалось' \
                     f' тебе отгадать!\n' \
                     f'Это было слово' \
                     f' "{sessionStorage[user_id]["word"]}"'
                 sessionStorage[user_id]['game_started'] = False
-                res['response']['buttons'] = sessionStorage[user_id]
-                ['buttons'][:2]
+                res['response']['buttons'] = sessionStorage[user_id]['buttons'][:2]
                 res['response']['buttons'].append(
                     {
                         'title': 'Начать',
@@ -468,7 +467,8 @@ def translator(res, req):  # переводчик
         if req['request']['original_utterance'] in list(languages):
             sessionStorage[user_id]['lang1'] = languages[req
                                                          ['request']
-                                                         ['original_utterance']
+                                                         ['original_'
+                                                          'utterance']
                                                          ]
             sessionStorage[user_id]['choose_language_1'] = False
             res['response']['text'] = 'Язык1 успешно выбран'
@@ -501,7 +501,8 @@ def translator(res, req):  # переводчик
         if req['request']['original_utterance'] in list(languages):
             sessionStorage[user_id]['lang2'] = languages[req
                                                          ['request']
-                                                         ['original_utterance']
+                                                         ['original_'
+                                                          'utterance']
                                                          ]
             sessionStorage[user_id]['choose_language_2'] = False
             res['response']['text'] = 'Язык2 успешно выбран'
