@@ -4,27 +4,42 @@ import json
 import random
 import requests
 
+# импортируем модули
+
+# инициализируем приложение
 app = Flask(__name__)
 
 logging.basicConfig(level=logging.INFO)
 
+# список языков
 languages = {
-    'азербайджанский': 'az', 'албанский': 'sq', 'английский': 'en', 'арабский': 'ar', 'башкирский': 'ba',
-    'белорусский': 'be', 'болгарский': 'bg', 'валлийский': 'cy', 'вьетнамский': 'vi', 'греческий': 'el',
-    'грузинский': 'ka', 'датский': 'da', 'ирландский': 'ga', 'итальянский': 'it', 'исландский': 'is',
-    'испанский': 'es', 'казахский': 'kk', 'китайский': 'zh', 'корейский': 'ko', 'латынь': 'la', 'латышский': 'lv',
-    'немецкий': 'de', 'норвежский': 'no', 'персидский': 'fa', 'польский': 'pl', 'португальский': 'pt',
-    'румынский': 'ro', 'сербский': 'sr', 'словацкий': 'sk', 'словенский': 'sl', 'тайский': 'th', 'турецкий': 'tr',
-    'украинский': 'uk', 'финский': 'fi', 'французский': 'fr', 'хинди': 'hi', 'хорватский': 'hr', 'чешский': 'cs',
-    'шведский': 'sv', 'шотландский': 'gd', 'эстонский': 'et', 'эсперанто': 'eo', 'японский': 'ja', 'русский': 'ru'
+    'азербайджанский': 'az', 'албанский': 'sq', 'английский': 'en',
+    'арабский': 'ar', 'башкирский': 'ba',
+    'белорусский': 'be', 'болгарский': 'bg', 'валлийский': 'cy',
+    'вьетнамский': 'vi', 'греческий': 'el',
+    'грузинский': 'ka', 'датский': 'da', 'ирландский': 'ga',
+    'итальянский': 'it', 'исландский': 'is',
+    'испанский': 'es', 'казахский': 'kk', 'китайский': 'zh',
+    'корейский': 'ko', 'латынь': 'la', 'латышский': 'lv',
+    'немецкий': 'de', 'норвежский': 'no', 'персидский': 'fa',
+    'польский': 'pl', 'португальский': 'pt',
+    'румынский': 'ro', 'сербский': 'sr', 'словацкий': 'sk',
+    'словенский': 'sl', 'тайский': 'th', 'турецкий': 'tr',
+    'украинский': 'uk', 'финский': 'fi', 'французский': 'fr',
+    'хинди': 'hi', 'хорватский': 'hr', 'чешский': 'cs',
+    'шведский': 'sv', 'шотландский': 'gd', 'эстонский': 'et',
+    'эсперанто': 'eo', 'японский': 'ja', 'русский': 'ru'
 }
 
 sessionStorage = {}
 
-words = open('/home/IGragon/mysite/words.txt', encoding='UTF-8', mode='r')
+# словарь
+words = open('/home/IGragon/mysite/words.txt', encoding='UTF-8',
+             mode='r')
 words = list(map(str.strip, words.readlines()))
 
 
+# обработка запроса
 @app.route('/post', methods=['POST'])
 def main():
     logging.info('Request: %r', request.json)
@@ -40,10 +55,12 @@ def main():
     return json.dumps(response)
 
 
+# начало диалога с Алисой
 def handle_dialog(res, req):
     user_id = req['session']['user_id']
-    if req['session']['new']:
-        res['response']['text'] = 'Привет, я Алиса! Назови своё имя!'
+    if req['session']['new']:  # спрашиваем имя
+        res['response']['text'] = 'Привет, я Алиса!' \
+                                  ' Назови своё имя!'
         sessionStorage[user_id] = {
             'first_name': None,
             'option': None,
@@ -57,14 +74,19 @@ def handle_dialog(res, req):
             'lang2': False
         }
         return
-
+    # если имени нет, то получаем его,
+    # либо прости представиться снова
     if sessionStorage[user_id]['first_name'] is None:
         first_name = get_first_name(req)
         if first_name is None:
-            res['response']['text'] = 'Не расслышала имя. Повтори, пожалуйста!'
+            res['response']['text'] = 'Не расслышала имя.' \
+                                      ' Повтори, пожалуйста!'
         else:
-            sessionStorage[user_id]['first_name'] = first_name.title()
-            res['response']['text'] = f'Приятно познакомиться, {first_name.title()}. Выбирай, что хочешь делать!'
+            sessionStorage[user_id]['first_name'] = first_name. \
+                title()
+            res['response']['text'] = f'Приятно познакомиться,' \
+                f' {first_name.title()}. Выбирай,' \
+                f' что хочешь делать!'
             res['response']['buttons'] = [
                 {
                     'title': 'Игра "Угадай перевод"',
@@ -83,20 +105,30 @@ def handle_dialog(res, req):
                     'hide': False
                 }
             ]
-
+    # если имя уже есть
     else:
+        # смотрим есть ли запущенные функции, если есть,
+        # то берём из запроса имя опции
+        # и запускаем соответствующую функцию
         if not sessionStorage[user_id]['option']:
-            if 'Игра "Угадай перевод"' in req['request']['original_utterance']:
+            if ('Игра "Угадай перевод"' in
+                    req['request']['original_utterance']):
                 sessionStorage[user_id]['option'] = 'game'
                 game_translation(res, req)
-            elif 'Переводчик' in req['request']['original_utterance']:
+            elif ('Переводчик' in
+                  req['request']['original_utterance']):
                 sessionStorage[user_id]['option'] = 'translate'
                 translator(res, req)
-            elif 'Хочу выйти!' in req['request']['original_utterance']:
-                res['response']['text'] = 'Пока, {}!'.format(sessionStorage[user_id]['first_name'])
+            elif ('Хочу выйти!' in
+                  req['request']['original_utterance']):
+                res['response']['text'] = 'Пока, {}!'.format(sessionStorage
+                                                                 [user_id]
+                                                                 ['first_name']
+                                                                 )
                 res['end_session'] = True
             elif 'помощь' in req['request']['nlu']['tokens']:
-                res['response']['text'] = ''' Игра "Угадай перевод" - вам даётся слово на случайном языке
+                res['response']['text'] = ''' Игра "Угадай перевод"
+                 - вам даётся слово на случайном языке
                  и варианты перевода\n\n
                  Переводчик - перевод фраз и слов\n\n
                  Хочу выйти - завершение диалога.'''
@@ -118,8 +150,11 @@ def handle_dialog(res, req):
                         'hide': False
                     }
                 ]
-            else:
-                res['response']['text'] = '{}, повтори пожалуйста!'.format(sessionStorage[user_id]['first_name'])
+            else:  # если не названа ни одна
+                # из выше перечисленных функций
+                res['response']['text'] = '{},' \
+                                          ' повтори пожалуйста!'. \
+                    format(sessionStorage[user_id]['first_name'])
                 res['response']['buttons'] = [
                     {
                         'title': 'Игра "Угадай перевод"',
@@ -138,14 +173,15 @@ def handle_dialog(res, req):
                         'hide': False
                     }
                 ]
-        else:
+        else:  # если функция уже есть,
+            # то смотрим какая, и запускаем её
             if sessionStorage[user_id]['option'] == 'game':
                 game_translation(res, req)
             elif sessionStorage[user_id]['option'] == 'translate':
                 translator(res, req)
 
 
-def game_translation(res, req):
+def game_translation(res, req):  # игра "Угадай перевод"
     user_id = req['session']['user_id']
     res['response']['buttons'] = [
         {
@@ -157,8 +193,10 @@ def game_translation(res, req):
             'hide': True
         }
     ]
-    if req['request']['original_utterance'] == 'Игра "Угадай перевод"':
-        res['response']['text'] = ' Нажми "Алиса, помощь", если не знаешь, что делать'
+    if req['request']['original_utterance'] == 'Игра ' \
+                                               '"Угадай перевод"':
+        res['response']['text'] = ' Нажми "Алиса, помощь",' \
+                                  ' если не знаешь, что делать'
         res['response']['buttons'].append(
             {
                 'title': 'Начать',
@@ -166,10 +204,15 @@ def game_translation(res, req):
             }
         )
         return
-    elif not sessionStorage[user_id]['game_started'] and req['request']['original_utterance'] == 'Алиса, помощь':
-        res['response']['text'] = 'Нажми "Начать", чтобы начать игру\n' \
-                                  'Либо нажмите "Алиса, выход", чтобы выйти\n\n' \
-                                  'Тебе даётся случайное слово на случайном языке. Попробуй угадать!'
+    elif (not sessionStorage[user_id]['game_started'] and
+          req['request']['original_utterance'] == 'Алиса, помощь'):
+        res['response']['text'] = 'Нажми "Начать",' \
+                                  ' чтобы начать игру\n' \
+                                  'Либо нажмите "Алиса, выход",' \
+                                  ' чтобы выйти\n\n' \
+                                  'Тебе даётся случайное слово' \
+                                  ' на случайном языке.' \
+                                  ' Попробуй угадать!'
         res['response']['buttons'].append(
             {
                 'title': 'Начать',
@@ -180,7 +223,8 @@ def game_translation(res, req):
         sessionStorage[user_id]['game_started'] = False
         sessionStorage[user_id]['option'] = False
         res['response']['buttons'].clear()
-        res['response']['text'] = '{}, Вы вышли в выбор действий, выбирайте!'.format(
+        res['response']['text'] = '{}, Вы вышли в выбор действий,' \
+                                  ' выбирайте!'.format(
             sessionStorage[user_id]['first_name'])
         res['response']['buttons'] = [
             {
@@ -201,42 +245,64 @@ def game_translation(res, req):
             }
         ]
     else:
-        if req['request']['original_utterance'] == 'Начать' and not sessionStorage[user_id]['game_started']:
+        if (req['request']['original_utterance'] == 'Начать' and
+                not sessionStorage[user_id]['game_started']):
             sessionStorage[user_id]['game_started'] = True
             info = get_word()
             sessionStorage[user_id]['word'] = info[0]
             while len(res['response']['buttons']) != 6:
-                word = random.choice(sessionStorage[user_id]['words'])
+                word = random.choice(sessionStorage[user_id]
+                                     ['words'])
                 if word != sessionStorage[user_id]['word']:
                     res['response']['buttons'].append({
                         'title': word,
                         'hide': True
                     })
             len_buttons = len(res['response']['buttons']) - 2
-            res['response']['buttons'].insert(random.randint(1, len_buttons) + 1,
+            res['response']['buttons'].insert(random.
+                                              randint(1,
+                                                      len_buttons) + 1,
                                               {
-                                                  'title': sessionStorage[user_id]['word'],
+                                                  'title':
+                                                      sessionStorage
+                                                      [user_id]
+                                                      ['word'],
                                                   'hide': True
                                               })
-            res['response']['text'] = 'Вам выпало слово - {}\nНа языке {}\nКак думаете, какой перевод?'.format(
+            res['response']['text'] = 'Вам выпало слово -' \
+                                      ' {}\nНа языке {}\n' \
+                                      'Как думаете, какой' \
+                                      ' перевод?'.format(
                 info[1], info[2])
-            sessionStorage[user_id]['buttons'] = res['response']['buttons'].copy()
-        elif req['request']['original_utterance'] == 'Алиса, помощь':
-            res['response']['text'] = '{}, выбери перевод из предложенных вариантов, у тебя всего 3 попытки!'.format(
+            sessionStorage[user_id]['buttons'] = res['response']
+            ['buttons'].copy()
+        elif req['request']['original_utterance'] == 'Алиса,' \
+                                                     ' помощь':
+            res['response']['text'] = '{}, выбери перевод' \
+                                      ' из предложенных' \
+                                      ' вариантов,' \
+                                      ' у тебя всего' \
+                                      ' 3 попытки!'.format(
                 sessionStorage[user_id]['first_name'])
-        elif sessionStorage[user_id]['word'] and req['request']['original_utterance'] != sessionStorage[user_id][
-            'word']:
-            res['response']['text'] = 'Нет, у этого слова другой перевод!'
+        elif (sessionStorage[user_id]['word'] and
+              req['request']['original_utterance'] !=
+              sessionStorage[user_id]['word']):
+            res['response']['text'] = 'Нет, у этого слова' \
+                                      ' другой перевод!'
             sessionStorage[user_id]['buttons'].remove({
                 'title': req['request']['original_utterance'],
                 'hide': True
             })
-            res['response']['buttons'] = sessionStorage[user_id]['buttons'].copy()
+            res['response']['buttons'] = sessionStorage[user_id]
+            ['buttons'].copy()
             if len(res['response']['buttons']) - 1 < 4:
-                res['response']['text'] = f'Эх, не удалось тебе отгадать!\n' \
-                    f'Это было слово "{sessionStorage[user_id]["word"]}"'
+                res['response']['text'] = f'Эх, не удалось' \
+                    f' тебе отгадать!\n' \
+                    f'Это было слово' \
+                    f' "{sessionStorage[user_id]["word"]}"'
                 sessionStorage[user_id]['game_started'] = False
-                res['response']['buttons'] = sessionStorage[user_id]['buttons'][:2]
+                res['response']['buttons'] = sessionStorage[user_id]
+                ['buttons'][:2]
                 res['response']['buttons'].append(
                     {
                         'title': 'Начать',
@@ -245,9 +311,14 @@ def game_translation(res, req):
                 )
                 sessionStorage[user_id]['word'] = False
                 return
-        elif req['request']['original_utterance'] == sessionStorage[user_id]['word']:
-            res['response']['text'] = '{}, молодец, ты справился!!\n' \
-                                      'Нажми "Начать", чтобы сыграть заного, либо "Алиса, выход", чтобы выйти.'.format(
+        elif req['request']['original_utterance'] == (sessionStorage
+                                                      [user_id]['word']):
+            res['response']['text'] = '{}, молодец,' \
+                                      ' ты справился!!\n' \
+                                      'Нажми "Начать",' \
+                                      ' чтобы сыграть заного,' \
+                                      ' либо "Алиса, выход",' \
+                                      ' чтобы выйти.'.format(
                 sessionStorage[user_id]['first_name'])
             res['response']['buttons'].append(
                 {
@@ -257,7 +328,9 @@ def game_translation(res, req):
             )
             sessionStorage[user_id]['game_started'] = False
         else:
-            res['response']['text'] = 'Хм, какая - то незнакомая комманда, повтори ещё раз!'
+            res['response']['text'] = 'Хм, какая - то' \
+                                      ' незнакомая комманда,' \
+                                      ' повтори ещё раз!'
             res['response']['buttons'] += [
                 {
                     'title': 'Язык1',
@@ -274,7 +347,7 @@ def game_translation(res, req):
             ]
 
 
-def translator(res, req):
+def translator(res, req):  # переводчик
     user_id = req['session']['user_id']
     res['response']['buttons'] = [
         {
@@ -286,9 +359,12 @@ def translator(res, req):
             'hide': True
         }
     ]
-    if (not sessionStorage[user_id]['choose_language_1'] and not sessionStorage[user_id]['choose_language_2'] and
-       not sessionStorage[user_id]['translate']) and req['request']['original_utterance'] == 'Переводчик':
-        res['response']['text'] = ' Нажми "Алиса, помощь", если не знаешь, что делать'
+    if (not sessionStorage[user_id]['choose_language_1'] and
+        not sessionStorage[user_id]['choose_language_2'] and
+        not sessionStorage[user_id]['translate']) and \
+            req['request']['original_utterance'] == 'Переводчик':
+        res['response']['text'] = ' Нажми "Алиса, помощь",' \
+                                  ' если не знаешь, что делать'
         res['response']['buttons'] += [
             {
                 'title': 'Язык1',
@@ -304,12 +380,15 @@ def translator(res, req):
             }
         ]
         return
-    elif (not sessionStorage[user_id]['choose_language_1'] and not sessionStorage[user_id]['choose_language_2'] and
-          not sessionStorage[user_id]['translate'] and req['request']['original_utterance'] == 'Алиса, выход'):
+    elif (not sessionStorage[user_id]['choose_language_1'] and
+          not sessionStorage[user_id]['choose_language_2'] and
+          not sessionStorage[user_id]['translate'] and
+          req['request']['original_utterance'] == 'Алиса, выход'):
         sessionStorage[user_id]['game_started'] = False
         sessionStorage[user_id]['option'] = False
         res['response']['buttons'].clear()
-        res['response']['text'] = '{}, Вы вышли в выбор действий, выбирайте!'.format(
+        res['response']['text'] = '{}, Вы вышли в выбор действий,' \
+                                  ' выбирайте!'.format(
             sessionStorage[user_id]['first_name'])
         res['response']['buttons'] = [
             {
@@ -329,12 +408,18 @@ def translator(res, req):
                 'hide': False
             }
         ]
-    elif (not sessionStorage[user_id]['choose_language_1'] and not sessionStorage[user_id]['choose_language_2'] and
-          not sessionStorage[user_id]['translate'] and req['request']['original_utterance'] == 'Алиса, помощь'):
-        res['response']['text'] = 'Нажми "Перевод" и введи текст, чтобы его перевести\n' \
-                                  'Нажми "Язык1", чтобы выбрать с какого языка переводить\n' \
-                                  'Нажми "Язык2", чтобы выбрать на какой язык переводить\n' \
-                                  'Либо нажмите "Алиса, выход", чтобы выйти'
+    elif (not sessionStorage[user_id]['choose_language_1'] and
+          not sessionStorage[user_id]['choose_language_2'] and
+          not sessionStorage[user_id]['translate'] and
+          req['request']['original_utterance'] == 'Алиса, помощь'):
+        res['response']['text'] = 'Нажми "Перевод" и введи текст,' \
+                                  ' чтобы его перевести\n' \
+                                  'Нажми "Язык1", чтобы выбрать' \
+                                  ' с какого языка переводить\n' \
+                                  'Нажми "Язык2", чтобы выбрать' \
+                                  ' на какой язык переводить\n' \
+                                  'Либо нажмите "Алиса, выход",' \
+                                  ' чтобы выйти'
         res['response']['buttons'] += [
             {
                 'title': 'Язык1',
@@ -349,10 +434,13 @@ def translator(res, req):
                 'hide': 'True'
             }
         ]
-    elif (not sessionStorage[user_id]['choose_language_1'] and not sessionStorage[user_id]['choose_language_2'] and
-          not sessionStorage[user_id]['translate'] and req['request']['original_utterance'] == 'Язык1'):
+    elif (not sessionStorage[user_id]['choose_language_1'] and
+          not sessionStorage[user_id]['choose_language_2'] and
+          not sessionStorage[user_id]['translate'] and
+          req['request']['original_utterance'] == 'Язык1'):
         sessionStorage[user_id]['choose_language_1'] = True
-        res['response']['text'] = 'Выберите из предложенных вариантов!'
+        res['response']['text'] = 'Выберите из предложенных' \
+                                  ' вариантов!'
         res['response']['buttons'].clear()
         for lang in list(languages):
             res['response']['buttons'].append(
@@ -361,10 +449,13 @@ def translator(res, req):
                     'hide': True
                 }
             )
-    elif (not sessionStorage[user_id]['choose_language_1'] and not sessionStorage[user_id]['choose_language_2'] and
-          not sessionStorage[user_id]['translate'] and req['request']['original_utterance'] == 'Язык2'):
+    elif (not sessionStorage[user_id]['choose_language_1'] and
+          not sessionStorage[user_id]['choose_language_2'] and
+          not sessionStorage[user_id]['translate'] and
+          req['request']['original_utterance'] == 'Язык2'):
         sessionStorage[user_id]['choose_language_2'] = True
-        res['response']['text'] = 'Выберите из предложенных вариантов!'
+        res['response']['text'] = 'Выберите из предложенных' \
+                                  ' вариантов!'
         res['response']['buttons'].clear()
         for lang in list(languages):
             res['response']['buttons'].append(
@@ -375,7 +466,10 @@ def translator(res, req):
             )
     elif sessionStorage[user_id]['choose_language_1']:
         if req['request']['original_utterance'] in list(languages):
-            sessionStorage[user_id]['lang1'] = languages[req['request']['original_utterance']]
+            sessionStorage[user_id]['lang1'] = languages[req
+                                                         ['request']
+                                                         ['original_utterance']
+                                                         ]
             sessionStorage[user_id]['choose_language_1'] = False
             res['response']['text'] = 'Язык1 успешно выбран'
             res['response']['buttons'] += [
@@ -393,7 +487,8 @@ def translator(res, req):
                 }
             ]
         else:
-            res['response']['text'] = 'Выберите из предложенных вариантов!'
+            res['response']['text'] = 'Выберите из предложенных' \
+                                      ' вариантов!'
             res['response']['buttons'].clear()
             for lang in list(languages):
                 res['response']['buttons'].append(
@@ -404,7 +499,10 @@ def translator(res, req):
                 )
     elif sessionStorage[user_id]['choose_language_2']:
         if req['request']['original_utterance'] in list(languages):
-            sessionStorage[user_id]['lang2'] = languages[req['request']['original_utterance']]
+            sessionStorage[user_id]['lang2'] = languages[req
+                                                         ['request']
+                                                         ['original_utterance']
+                                                         ]
             sessionStorage[user_id]['choose_language_2'] = False
             res['response']['text'] = 'Язык2 успешно выбран'
             res['response']['buttons'] += [
@@ -422,7 +520,8 @@ def translator(res, req):
                 }
             ]
         else:
-            res['response']['text'] = 'Выберите из предложенных вариантов!'
+            res['response']['text'] = 'Выберите из предложенных' \
+                                      ' вариантов!'
             res['response']['buttons'].clear()
             for lang in list(languages):
                 res['response']['buttons'].append(
@@ -431,9 +530,12 @@ def translator(res, req):
                         'hide': True
                     }
                 )
-    elif (not sessionStorage[user_id]['choose_language_1'] and not sessionStorage[user_id]['choose_language_2'] and
-          not sessionStorage[user_id]['translate'] and req['request']['original_utterance'] == 'Перевод'):
-        if not sessionStorage[user_id]['lang1'] or not sessionStorage[user_id]['lang2']:
+    elif (not sessionStorage[user_id]['choose_language_1'] and
+          not sessionStorage[user_id]['choose_language_2'] and
+          not sessionStorage[user_id]['translate'] and
+          req['request']['original_utterance'] == 'Перевод'):
+        if not sessionStorage[user_id]['lang1'] or \
+                not sessionStorage[user_id]['lang2']:
             res['response']['text'] = 'Убедись, что языки выбраны!'
             res['response']['buttons'] += [
                 {
@@ -455,9 +557,12 @@ def translator(res, req):
         res['response']['buttons'].clear()
 
     elif sessionStorage[user_id]['translate']:
-        res['response']['text'] = translate(req['request']['original_utterance'],
-                                            sessionStorage[user_id]['lang1'],
-                                            sessionStorage[user_id]['lang2'])
+        res['response']['text'] = translate(req['request']
+                                            ['original_utterance'],
+                                            sessionStorage[user_id]
+                                            ['lang1'],
+                                            sessionStorage[user_id]
+                                            ['lang2'])
         sessionStorage[user_id]['translate'] = False
         res['response']['buttons'] += [
             {
@@ -474,7 +579,8 @@ def translator(res, req):
             }
         ]
     else:
-        res['response']['text'] = 'Хм, какая - то незнакомая комманда, повтори ещё раз!'
+        res['response']['text'] = 'Хм, какая - то незнакомая' \
+                                  ' комманда, повтори ещё раз!'
         res['response']['buttons'] += [
             {
                 'title': 'Язык1',
@@ -491,26 +597,32 @@ def translator(res, req):
         ]
 
 
+# получаем имя пользователя
 def get_first_name(req):
     # перебираем сущности
     for entity in req['request']['nlu']['entities']:
         # находим сущность с типом 'YANDEX.FIO'
         if entity['type'] == 'YANDEX.FIO':
-            # Если есть сущность с ключом 'first_name', то возвращаем её значение.
+            # Если есть сущность с ключом 'first_name',
+            # то возвращаем её значение.
             # Во всех остальных случаях возвращаем None.
             return entity['value'].get('first_name', None)
 
 
+# получаем слово
 def get_word():
     word = random.choice(words)
     trans_word = word
     lang = ''
     while trans_word == word:
         word = random.choice(words)
-        url = 'https://translate.yandex.net/api/v1.5/tr.json/translate'
+        url = 'https://translate.yandex.net/api/v1.5/tr' \
+              '.json/translate'
         lang = random.choice(sorted(list(languages)[:-1]))
         params = {
-            'key': 'trnsl.1.1.20190413T111416Z.1abf50c982ce4f9e.2b978b4abcdb550558af2b2b9fdb162f36ff06fd',
+            'key': 'trnsl.1.1.20190413T111416Z.1abf50c982'
+                   'ce4f9e.2b978b4abcdb550558af2b2b9fdb162'
+                   'f36ff06fd',
             'text': word,
             'lang': 'ru-{}'.format(languages[lang]),
             'format': 'plain'
@@ -523,12 +635,13 @@ def get_word():
     return word, trans_word, lang
 
 
+# переводим текст
 def translate(text, lang1, lang2):
-
     url = 'https://translate.yandex.net/api/v1.5/tr.json/translate'
 
     params = {
-        'key': 'trnsl.1.1.20190413T111416Z.1abf50c982ce4f9e.2b978b4abcdb550558af2b2b9fdb162f36ff06fd',
+        'key': 'trnsl.1.1.20190413T111416Z.1abf50c982ce4f9e.2b978b4'
+               'abcdb550558af2b2b9fdb162f36ff06fd',
         'text': text,
         'lang': '{}-{}'.format(lang1, lang2),
         'format': 'plain'
